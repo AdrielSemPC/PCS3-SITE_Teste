@@ -1,18 +1,20 @@
-
 import HeroSection from "../components/home/HeroSection";
+import AcaoRapidaSection from "../components/home/AcaoRapidaSection";
 import GolpesSection from "../components/home/GolpesSection";
 import RegraTriplaSection from "../components/home/RegraTriplaSection";
-import AcaoRapidaSection from "../components/home/AcaoRapidaSection";
-import Footer from "../components/layout/Footer";
+import AvaliacaoForm from "../components/ui/AvaliacaoForm";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#fcfbf7] font-sans text-gray-800">
+    <main className="flex min-h-screen flex-col w-full">
       <HeroSection />
+      <AcaoRapidaSection />
       <GolpesSection />
       <RegraTriplaSection />
-      <AcaoRapidaSection />
-      <Footer />
+
+      <section className="w-full py-16 flex justify-center bg-gray-50 border-t border-gray-200">
+        <AvaliacaoForm />
+      </section>
     </main>
   );
 }
