@@ -5,7 +5,6 @@ export default function BotLeitura() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [suporte, setSuporte] = useState(true);
-  const [vozes, setVozes] = useState([]);
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) {
@@ -13,18 +12,8 @@ export default function BotLeitura() {
       return;
     }
 
-    // Função para carregar as vozes do navegador
-    const carregarVozes = () => {
-      setVozes(window.speechSynthesis.getVoices());
-    };
-
-    // Carrega as vozes imediatamente
-    carregarVozes();
-
-    // O Google Chrome carrega as vozes de forma assíncrona, então precisamos deste evento
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = carregarVozes;
-    }
+    // Força o navegador a acordar e carregar as vozes em segundo plano
+    window.speechSynthesis.getVoices();
 
     return () => {
       if ("speechSynthesis" in window) {
@@ -52,26 +41,35 @@ export default function BotLeitura() {
     if (!texto) return;
 
     const utterance = new SpeechSynthesisUtterance(texto);
-    utterance.lang = "pt-BR";
-    utterance.rate = 0.9;
+    utterance.rate = 0.9; // Velocidade boa para idosos
     utterance.pitch = 1.0;
+    utterance.lang = "pt-BR"; // Fallback padrão
 
-    // Força a seleção de uma voz brasileira
-    if (vozes.length > 0) {
-      // Procura primeiro pelo português do Brasil
-      const vozPTBR = vozes.find(
+    // Busca as vozes no exato momento do clique, garantindo que já carregaram
+    const vozesDisponiveis = window.speechSynthesis.getVoices();
+
+    if (vozesDisponiveis.length > 0) {
+      // Procura agressivamente por vozes do Brasil ignorando letras maiúsculas/minúsculas
+      const vozPTBR = vozesDisponiveis.find(
         (voz) =>
-          voz.lang === "pt-BR" ||
-          voz.lang === "pt_BR" ||
-          voz.lang.includes("pt-BR"),
+          voz.lang.toLowerCase().includes("pt-br") ||
+          voz.lang.toLowerCase().includes("pt_br") ||
+          voz.name.toLowerCase().includes("brasil") ||
+          voz.name.toLowerCase().includes("brazil"),
       );
 
       if (vozPTBR) {
         utterance.voice = vozPTBR;
+        utterance.lang = vozPTBR.lang; // Sincroniza o idioma com a voz exata encontrada
       } else {
-        // Se não achar BR, pega a primeira em português (ex: Portugal)
-        const vozPT = vozes.find((voz) => voz.lang.includes("pt"));
-        if (vozPT) utterance.voice = vozPT;
+        // Se não achar BR de jeito nenhum, pega qualquer uma em português (ex: Portugal)
+        const vozPT = vozesDisponiveis.find((voz) =>
+          voz.lang.toLowerCase().includes("pt"),
+        );
+        if (vozPT) {
+          utterance.voice = vozPT;
+          utterance.lang = vozPT.lang;
+        }
       }
     }
 
@@ -80,7 +78,10 @@ export default function BotLeitura() {
       setIsPaused(false);
     };
 
+    // Previne bugs no Chrome cancelando falas anteriores antes de começar a nova
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
+
     setIsSpeaking(true);
     setIsPaused(false);
   };
