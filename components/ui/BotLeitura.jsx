@@ -5,14 +5,27 @@ export default function BotLeitura() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [suporte, setSuporte] = useState(true);
+  const [vozes, setVozes] = useState([]);
 
   useEffect(() => {
-    // Verifica se o navegador suporta a API de fala
     if (!("speechSynthesis" in window)) {
       setSuporte(false);
+      return;
     }
 
-    // Para a leitura se o usuário mudar de página ou fechar o site
+    // Função para carregar as vozes do navegador
+    const carregarVozes = () => {
+      setVozes(window.speechSynthesis.getVoices());
+    };
+
+    // Carrega as vozes imediatamente
+    carregarVozes();
+
+    // O Google Chrome carrega as vozes de forma assíncrona, então precisamos deste evento
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = carregarVozes;
+    }
+
     return () => {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
@@ -21,7 +34,6 @@ export default function BotLeitura() {
   }, []);
 
   const getTextoParaLer = () => {
-    // Pega todo o texto que está dentro da tag <main>
     const elementoPrincipal = document.querySelector("main");
     return elementoPrincipal
       ? elementoPrincipal.innerText
@@ -39,11 +51,29 @@ export default function BotLeitura() {
     const texto = getTextoParaLer();
     if (!texto) return;
 
-    // Configura a voz
     const utterance = new SpeechSynthesisUtterance(texto);
     utterance.lang = "pt-BR";
-    utterance.rate = 0.9; // Velocidade reduzida para melhor compreensão
+    utterance.rate = 0.9;
     utterance.pitch = 1.0;
+
+    // Força a seleção de uma voz brasileira
+    if (vozes.length > 0) {
+      // Procura primeiro pelo português do Brasil
+      const vozPTBR = vozes.find(
+        (voz) =>
+          voz.lang === "pt-BR" ||
+          voz.lang === "pt_BR" ||
+          voz.lang.includes("pt-BR"),
+      );
+
+      if (vozPTBR) {
+        utterance.voice = vozPTBR;
+      } else {
+        // Se não achar BR, pega a primeira em português (ex: Portugal)
+        const vozPT = vozes.find((voz) => voz.lang.includes("pt"));
+        if (vozPT) utterance.voice = vozPT;
+      }
+    }
 
     utterance.onend = () => {
       setIsSpeaking(false);
