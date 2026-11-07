@@ -48,7 +48,7 @@ export default function AvaliacaoForm() {
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md max-w-md border border-gray-100"
     >
-      <h3 className="text-xl font-bold text-gray-800">Avalie o PCS3</h3>
+      <h3 className="text-xl font-bold text-gray-800">Avalie o Site</h3>
 
       <div>
         <label className="block mb-2 text-sm font-medium text-gray-700">
