@@ -45,6 +45,7 @@ export default function AvaliacaoForm() {
 
   return (
     <form
+      data-leitura-ignorar="true"
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md max-w-md border border-gray-100"
     >

@@ -7,13 +7,15 @@ export default function GolpesPage() {
     <main className="min-h-screen bg-[#fcfbf7] text-gray-800">
       <section className="bg-[#173342] py-16">
         <div className="max-w-6xl mx-auto px-6">
-          <Link
-            href="/"
-            className="text-gray-300 flex items-center gap-2 hover:text-white transition"
-          >
-            <ArrowLeft size={18} />
-            Voltar para o início
-          </Link>
+          <div data-leitura-ignorar="true">
+            <Link
+              href="/"
+              className="text-gray-300 flex items-center gap-2 hover:text-white transition"
+            >
+              <ArrowLeft size={18} />
+              Voltar para o início
+            </Link>
+          </div>
 
           <p className="text-yellow-400 font-bold text-sm uppercase tracking-wider mt-10">
             Fique atento

@@ -41,7 +41,7 @@ export default function JogosPage() {
       <div className="mx-auto max-w-5xl">
 
         {/* Botão para voltar à página inicial */}
-        <div className="mb-8">
+        <div data-leitura-ignorar="true" className="mb-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-lg bg-[#173342] px-5 py-3 font-semibold text-white shadow-md transition hover:bg-[#254c60]"
