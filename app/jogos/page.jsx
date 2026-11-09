@@ -1,4 +1,6 @@
 
+import Link from "next/link";
+
 const jogos = [
   {
     nome: "Perguntas para os idosos",
@@ -38,6 +40,17 @@ export default function JogosPage() {
 
       <div className="mx-auto max-w-5xl">
 
+        {/* Botão para voltar à página inicial */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#173342] px-5 py-3 font-semibold text-white shadow-md transition hover:bg-[#254c60]"
+          >
+            ← Voltar para o início
+          </Link>
+        </div>
+
+        {/* Cabeçalho da página */}
         <div className="mb-10 text-center">
 
           <span className="mb-4 inline-block rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold text-blue-800">
@@ -56,6 +69,7 @@ export default function JogosPage() {
 
         </div>
 
+        {/* Cards dos jogos */}
         <div className="grid gap-7 md:grid-cols-2">
 
           {jogos.map((jogo) => (
@@ -90,7 +104,9 @@ export default function JogosPage() {
 
         </div>
 
+        {/* Mensagem final */}
         <div className="mt-12 rounded-2xl bg-[#173342] p-7 text-center text-white">
+
           <h2 className="mb-3 text-2xl font-bold">
             Segurança também se aprende!
           </h2>
@@ -99,6 +115,7 @@ export default function JogosPage() {
             Compartilhe o conhecimento e ajude outras pessoas
             a se protegerem contra golpes digitais.
           </p>
+
         </div>
 
       </div>

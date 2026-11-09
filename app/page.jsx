@@ -4,7 +4,6 @@ import GolpesSection from "../components/home/GolpesSection";
 import RegraTriplaSection from "../components/home/RegraTriplaSection";
 import AvaliacaoForm from "../components/ui/AvaliacaoForm";
 import Link from "next/link";
-import Footer from "../components/layout/Footer";
 
 export default function Home() {
   return (
@@ -25,8 +24,6 @@ export default function Home() {
       <section className="w-full py-16 flex justify-center bg-gray-50 border-t border-gray-200">
         <AvaliacaoForm />
       </section>
-
-      <Footer />
     </main>
   );
 }
