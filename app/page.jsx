@@ -24,6 +24,8 @@ export default function Home() {
       <section className="w-full py-16 flex justify-center bg-gray-50 border-t border-gray-200">
         <AvaliacaoForm />
       </section>
+
+      <Footer />
     </main>
   );
 }
