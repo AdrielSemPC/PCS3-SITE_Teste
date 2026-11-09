@@ -4,6 +4,7 @@ import GolpesSection from "../components/home/GolpesSection";
 import RegraTriplaSection from "../components/home/RegraTriplaSection";
 import AvaliacaoForm from "../components/ui/AvaliacaoForm";
 import Link from "next/link";
+import Footer from "../components/layout/Footer";
 
 export default function Home() {
   return (
