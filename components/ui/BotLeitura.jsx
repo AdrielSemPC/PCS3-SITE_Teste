@@ -80,6 +80,17 @@ export default function BotLeitura() {
     }
   };
 
+  // Função auxiliar para verificar se uma cor RGB/RGBA é escura
+  const isCorEscura = (rgbStr) => {
+    if (!rgbStr || rgbStr === "transparent" || rgbStr === "rgba(0, 0, 0, 0)") return false;
+    const match = rgbStr.match(/\d+/g);
+    if (!match || match.length < 3) return false;
+    const [r, g, b] = match.map(Number);
+    // Formula padrão de luminosidade percebida (perceived brightness)
+    const luminosidade = (r * 299 + g * 587 + b * 114) / 1000;
+    return luminosidade < 128; // Retorna true se a cor for escura
+  };
+
   // Aplica o destaque no bloco visual correspondente ao índice atual da leitura
   const aplicarDestaque = (index) => {
     limparDestaque();
@@ -88,8 +99,19 @@ export default function BotLeitura() {
     if (!noTexto || !noTexto.parentNode) return;
 
     try {
+      // Descobre a cor de fundo real do elemento onde o texto está inserido
+      const elementoPai = noTexto.parentElement;
+      const estiloComp = window.getComputedStyle(elementoPai);
+      const corFundo = estiloComp.backgroundColor;
+
       const span = document.createElement("span");
-      span.className = "trecho-leitura-ativo";
+      
+      // Se o elemento pai tiver fundo escuro, usa .trecho-leitura-dark
+      if (isCorEscura(corFundo)) {
+        span.className = "trecho-leitura-dark";
+      } else {
+        span.className = "trecho-leitura-ativo";
+      }
 
       noTexto.parentNode.insertBefore(span, noTexto);
       span.appendChild(noTexto);
@@ -100,7 +122,7 @@ export default function BotLeitura() {
       console.warn("Erro ao aplicar destaque no DOM:", e);
     }
   };
-
+  
   const limparSimbolos = (str) => {
     return str
       // Remove símbolos gráficos e decorativos que causam leitura estranha
