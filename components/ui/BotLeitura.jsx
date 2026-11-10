@@ -7,58 +7,58 @@ export default function BotLeitura() {
   const [isPaused, setIsPaused] = useState(false);
   const [suporte, setSuporte] = useState(true);
   const pathname = usePathname();
-  const keepAliveTimerRef = useRef(null);
 
   const rotasPermitidas = ["/golpes", "/regra-tripla", "/ajuda"];
   const deveExibir = rotasPermitidas.some((rota) => pathname?.startsWith(rota));
 
-  const stopKeepAlive = () => {
-    if (keepAliveTimerRef.current) {
-      clearInterval(keepAliveTimerRef.current);
-      keepAliveTimerRef.current = null;
-    }
-  };
+  // Refs para controle seguro da fila de áudio sem depender de re-renders do React
+  const chunksRef = useRef([]);
+  const currentIndexRef = useRef(0);
+  const isSpeakingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const utteranceRef = useRef(null);
 
-  const startKeepAlive = () => {
-    stopKeepAlive();
-    keepAliveTimerRef.current = setInterval(() => {
-      if (
-        typeof window !== "undefined" &&
-        "speechSynthesis" in window &&
-        window.speechSynthesis.speaking &&
-        !window.speechSynthesis.paused
-      ) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
+  const obterVozPTBR = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+    const vozes = window.speechSynthesis.getVoices();
+    if (!vozes || vozes.length === 0) return null;
+
+    return (
+      vozes.find((v) => v.lang && /^(pt[-_]br)$/i.test(v.lang)) ||
+      vozes.find((v) => v.lang && v.lang.toLowerCase().startsWith("pt-br")) ||
+      vozes.find(
+        (v) =>
+          v.name &&
+          (v.name.toLowerCase().includes("brasil") ||
+            v.name.toLowerCase().includes("brazil"))
+      ) ||
+      vozes.find((v) => v.lang && v.lang.toLowerCase().startsWith("pt")) ||
+      null
+    );
   };
 
   useEffect(() => {
-    if (!("speechSynthesis" in window)) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       setSuporte(false);
       return;
     }
 
-    // Força o navegador a acordar e carregar as vozes em segundo plano
-    window.speechSynthesis.getVoices();
+    const carregarVozes = () => {
+      window.speechSynthesis.getVoices();
+    };
+
+    carregarVozes();
+    window.speechSynthesis.addEventListener("voiceschanged", carregarVozes);
 
     return () => {
-      stopKeepAlive();
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
+      window.speechSynthesis.removeEventListener("voiceschanged", carregarVozes);
+      pararLeitura();
     };
   }, []);
 
   // Para a leitura automaticamente se o usuário mudar de rota/página
   useEffect(() => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      stopKeepAlive();
-      setIsSpeaking(false);
-      setIsPaused(false);
-    }
+    pararLeitura();
   }, [pathname]);
 
   const limparSimbolos = (str) => {
@@ -95,18 +95,63 @@ export default function BotLeitura() {
     return sentencas.join(" ");
   };
 
+  // Divide o texto em blocos pequenos (máximo ~140 caracteres)
+  // Motores móveis (Android Chrome e iOS Safari) travam ou silenciam se o texto for longo
+  const dividirTextoEmChunks = (textoFormatado, maxLen = 140) => {
+    if (!textoFormatado) return [];
+
+    const sentencasBrutas =
+      textoFormatado.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [textoFormatado];
+    const chunks = [];
+
+    for (let sentenca of sentencasBrutas) {
+      sentenca = sentenca.trim();
+      if (!sentenca) continue;
+
+      if (sentenca.length <= maxLen) {
+        chunks.push(sentenca);
+      } else {
+        const subPartes = sentenca.split(/([,;:]\s+)/);
+        let chunkAtual = "";
+
+        for (let i = 0; i < subPartes.length; i++) {
+          const parte = subPartes[i];
+          if ((chunkAtual + parte).length <= maxLen) {
+            chunkAtual += parte;
+          } else {
+            if (chunkAtual.trim()) chunks.push(chunkAtual.trim());
+            if (parte.length > maxLen) {
+              const palavras = parte.split(/\s+/);
+              let palavraChunk = "";
+              for (const palavra of palavras) {
+                if ((palavraChunk + " " + palavra).length <= maxLen) {
+                  palavraChunk += (palavraChunk ? " " : "") + palavra;
+                } else {
+                  if (palavraChunk.trim()) chunks.push(palavraChunk.trim());
+                  palavraChunk = palavra;
+                }
+              }
+              chunkAtual = palavraChunk;
+            } else {
+              chunkAtual = parte;
+            }
+          }
+        }
+        if (chunkAtual.trim()) {
+          chunks.push(chunkAtual.trim());
+        }
+      }
+    }
+
+    return chunks.filter((c) => c && c.trim().length > 0);
+  };
+
   const getTextoParaLer = () => {
     const elementoPrincipal = document.querySelector("main") || document.body;
     if (!elementoPrincipal) return "";
 
-    // Clona o conteúdo para filtrar sem alterar o DOM visível
     const clone = elementoPrincipal.cloneNode(true);
 
-    // Seletores de elementos que NÃO devem ser lidos:
-    // - Botões e links (ações, navegação de voltar, ver golpes, etc.)
-    // - Formulários (avaliações, inputs, caixas de texto)
-    // - Cabeçalhos/rodapés de navegação
-    // - Imagens, ícones SVG e elementos marcados para ignorar
     const seletoresParaIgnorar = [
       "button",
       "a",
@@ -138,105 +183,147 @@ export default function BotLeitura() {
       el.remove();
     });
 
-    // Converte quebras de linha manuais <br> em espaço para evitar cortes no meio de frases
-    clone.querySelectorAll("br").forEach((br) => {
-      br.replaceWith(" ");
+    // Garante que elementos de bloco tenham quebra de linha para o textContent não grudar palavras
+    const tagsDeBloco = [
+      "p",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "li",
+      "article",
+      "section",
+      "div",
+    ];
+    clone.querySelectorAll(tagsDeBloco.join(", ")).forEach((el) => {
+      el.append(" \n");
     });
 
-    // Anexa temporariamente no DOM de forma invisível para que innerText calcule
-    // corretamente as quebras de linha entre blocos sem exibir nada na tela
-    const containerTemporario = document.createElement("div");
-    containerTemporario.setAttribute("aria-hidden", "true");
-    containerTemporario.style.cssText =
-      "position:absolute;left:-9999px;top:-9999px;width:1000px;opacity:0;pointer-events:none;";
-    containerTemporario.appendChild(clone);
-    document.body.appendChild(containerTemporario);
+    clone.querySelectorAll("br").forEach((br) => {
+      br.replaceWith(" \n");
+    });
 
-    const textoBruto = clone.innerText || clone.textContent || "";
-    containerTemporario.remove();
-
+    const textoBruto = clone.textContent || "";
     return formatarTextoParaVoz(textoBruto);
   };
 
-  const iniciarLeitura = () => {
-    if (isPaused) {
-      window.speechSynthesis.resume();
-      startKeepAlive();
-      setIsPaused(false);
-      setIsSpeaking(true);
+  const tocarChunk = (index) => {
+    if (
+      !isSpeakingRef.current ||
+      isPausedRef.current ||
+      index >= chunksRef.current.length
+    ) {
+      if (index >= chunksRef.current.length) {
+        pararLeitura();
+      }
       return;
     }
 
-    const texto = getTextoParaLer();
-    if (!texto) return;
+    currentIndexRef.current = index;
+    const chunkTexto = chunksRef.current[index];
+    if (!chunkTexto) {
+      tocarChunk(index + 1);
+      return;
+    }
 
-    window.speechSynthesis.cancel();
-    stopKeepAlive();
-
-    const utterance = new SpeechSynthesisUtterance(texto);
-    utterance.rate = 0.9; // Velocidade confortável para pessoas idosas
+    const utterance = new SpeechSynthesisUtterance(chunkTexto);
+    utterance.rate = 0.95;
     utterance.pitch = 1.0;
-    utterance.lang = "pt-BR"; // Fallback padrão
+    utterance.lang = "pt-BR";
 
-    // Busca as vozes no exato momento do clique, garantindo que já carregaram
-    const vozesDisponiveis = window.speechSynthesis.getVoices();
-
-    if (vozesDisponiveis.length > 0) {
-      // Procura por vozes do Brasil
-      const vozPTBR = vozesDisponiveis.find(
-        (voz) =>
-          voz.lang.toLowerCase().includes("pt-br") ||
-          voz.lang.toLowerCase().includes("pt_br") ||
-          voz.name.toLowerCase().includes("brasil") ||
-          voz.name.toLowerCase().includes("brazil"),
-      );
-
-      if (vozPTBR) {
-        utterance.voice = vozPTBR;
-        utterance.lang = vozPTBR.lang;
-      } else {
-        const vozPT = vozesDisponiveis.find((voz) =>
-          voz.lang.toLowerCase().includes("pt"),
-        );
-        if (vozPT) {
-          utterance.voice = vozPT;
-          utterance.lang = vozPT.lang;
-        }
-      }
+    const voz = obterVozPTBR();
+    if (voz) {
+      utterance.voice = voz;
+      utterance.lang = voz.lang;
     }
 
     utterance.onend = () => {
-      stopKeepAlive();
-      setIsSpeaking(false);
-      setIsPaused(false);
+      if (isSpeakingRef.current && !isPausedRef.current) {
+        // Intervalo de segurança para motores móveis (iOS/Android) processarem o próximo bloco
+        setTimeout(() => {
+          tocarChunk(index + 1);
+        }, 30);
+      }
     };
 
     utterance.onerror = (e) => {
-      stopKeepAlive();
-      if (e.error !== "interrupted" && e.error !== "canceled") {
-        console.error("Erro na leitura de voz:", e);
+      if (e.error === "interrupted" || e.error === "canceled") {
+        return;
       }
-      setIsSpeaking(false);
-      setIsPaused(false);
+      console.warn("Aviso na leitura do bloco:", e);
+      if (isSpeakingRef.current && !isPausedRef.current) {
+        setTimeout(() => {
+          tocarChunk(index + 1);
+        }, 50);
+      }
     };
 
-    startKeepAlive();
+    // Previne que o Garbage Collector descarte o utterance antes de terminar
+    utteranceRef.current = utterance;
+    if (typeof window !== "undefined") {
+      window.__speechUtterance = utterance;
+    }
+
     window.speechSynthesis.speak(utterance);
+  };
+
+  const iniciarLeitura = () => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    // Se estava pausado, retoma da exata frase onde parou
+    if (isPaused) {
+      isPausedRef.current = false;
+      isSpeakingRef.current = true;
+      setIsPaused(false);
+      setIsSpeaking(true);
+      tocarChunk(currentIndexRef.current);
+      return;
+    }
+
+    // Início do zero
+    const textoFormatado = getTextoParaLer();
+    if (!textoFormatado) return;
+
+    const chunks = dividirTextoEmChunks(textoFormatado);
+    if (chunks.length === 0) return;
+
+    window.speechSynthesis.cancel();
+
+    chunksRef.current = chunks;
+    currentIndexRef.current = 0;
+    isPausedRef.current = false;
+    isSpeakingRef.current = true;
 
     setIsSpeaking(true);
     setIsPaused(false);
+
+    tocarChunk(0);
   };
 
   const pausarLeitura = () => {
-    window.speechSynthesis.pause();
-    stopKeepAlive();
+    // Pausa controlada: interrompe o áudio atual e memoriza a frase atual
+    isPausedRef.current = true;
+    isSpeakingRef.current = false;
     setIsPaused(true);
     setIsSpeaking(false);
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
   };
 
   const pararLeitura = () => {
-    stopKeepAlive();
-    window.speechSynthesis.cancel();
+    isSpeakingRef.current = false;
+    isPausedRef.current = false;
+    currentIndexRef.current = 0;
+    chunksRef.current = [];
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
     setIsSpeaking(false);
     setIsPaused(false);
   };
@@ -247,7 +334,7 @@ export default function BotLeitura() {
     <div
       data-leitura-ignorar="true"
       aria-hidden="true"
-      className="fixed bottom-6 right-6 bg-white p-4 rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.2)] border-2 border-blue-600 flex flex-col gap-3 z-50 w-72"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white p-3.5 sm:p-4 rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.2)] border-2 border-blue-600 flex flex-col gap-2.5 sm:gap-3 z-50 w-72 max-w-[calc(100vw-2rem)]"
     >
       <p className="text-base font-bold text-center text-gray-800">
         Assistente de Leitura
@@ -256,15 +343,15 @@ export default function BotLeitura() {
         {!isSpeaking ? (
           <button
             onClick={iniciarLeitura}
-            className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold flex-1 text-lg transition-colors cursor-pointer"
-            aria-label="Ouvir o conteúdo importante da página"
+            className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold flex-1 text-base sm:text-lg transition-colors cursor-pointer"
+            aria-label={isPaused ? "Continuar leitura" : "Ouvir o conteúdo importante da página"}
           >
-            ▶️ Ouvir
+            {isPaused ? "▶️ Continuar" : "▶️ Ouvir"}
           </button>
         ) : (
           <button
             onClick={pausarLeitura}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-xl font-bold flex-1 text-lg transition-colors cursor-pointer"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white p-3 rounded-xl font-bold flex-1 text-base sm:text-lg transition-colors cursor-pointer"
             aria-label="Pausar leitura"
           >
             ⏸️ Pausar
@@ -273,7 +360,7 @@ export default function BotLeitura() {
         <button
           onClick={pararLeitura}
           disabled={!isSpeaking && !isPaused}
-          className="bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500 text-white p-3 rounded-xl font-bold flex-1 text-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500 text-white p-3 rounded-xl font-bold flex-1 text-base sm:text-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
           aria-label="Parar leitura"
         >
           ⏹️ Parar
