@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Destaque visual durante a leitura em voz alta */
+::highlight(leitura-ativa) {
+  background-color: #fef08a; /* Amarelo */
+  color: #1e293b;            /* Texto escuro */
+}
