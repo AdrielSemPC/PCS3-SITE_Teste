@@ -15,7 +15,7 @@
 .trecho-leitura-dark {
   background-color: #854d0e !important; /* Dourado/Castanho */
   color: #fef08a !important;            /* Texto amarelo claro para contraste */
-  mix-blend-mode: normal !important;     /* Não multiplica para não sumir */
+  mix-blend-mode: multiply !important;
   display: inline;
   padding: 0 !important;
   margin: 0 !important;
