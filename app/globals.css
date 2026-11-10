@@ -4,7 +4,7 @@
 .trecho-leitura-ativo {
   background-color: #ffffff !important; /* Cor base para inverter */
   mix-blend-mode: difference !important; /* Inverte o fundo em relação ao texto */
-  border-radius: 0px;
-  padding: 2px 0px;
+  border-radius: 4px;
+  padding: 2px 4px;
   transition: background-color 0.2s ease;
 }
