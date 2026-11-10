@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
-/* Destaca o fundo com contraste exato sem alterar a cor original do texto */
+/* Destaque visual que não altera a posição das palavras nem o layout */
 .trecho-leitura-ativo {
-  background-color: #ffffff !important; /* Cor base para inverter */
-  mix-blend-mode: difference !important; /* Inverte o fundo em relação ao texto */
-  border-radius: 4px;
-  padding: 2px 4px;
-  transition: background-color 0.2s ease;
+  background-color: #fef08a !important; /* Amarelo de destaque */
+  color: #000000 !important;            /* Garante leitura nítida sobre o amarelo */
+  display: inline;                       /* Mantém o fluxo normal do texto */
+  padding: 0 !important;                 /* Zero padding para NÃO mover o texto */
+  margin: 0 !important;                  /* Zero margem para NÃO mover o texto */
+  box-decoration-break: clone;           /* Mantém o fundo uniforme se o texto quebrar linha */
+  -webkit-box-decoration-break: clone;
 }
