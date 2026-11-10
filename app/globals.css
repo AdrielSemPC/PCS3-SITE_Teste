@@ -13,7 +13,7 @@
 
 /* Destaque para fundos escuros (Evita que o texto suma no preto/Dark Mode) */
 .trecho-leitura-dark {
-  background-color: #854d0e !important; /* Tom dourado escuro/castanho */
+  background-color: #facc15 !important; /* Tom dourado escuro/castanho */
   color: #000000 !important;            /* Texto em amarelo claro para alto contraste */
   mix-blend-mode: normal !important;    /* Desativa o multiply no escuro */
   display: inline;
