@@ -80,17 +80,36 @@ export default function BotLeitura() {
     }
   };
 
-  // Função auxiliar para verificar se uma cor RGB/RGBA é escura
+ // Descobre a cor de fundo real subindo pelos elementos pai (caso o pai seja transparente)
+  const obterCorFundoReal = (elemento) => {
+    let el = elemento;
+    while (el && el !== document.body) {
+      const estilo = window.getComputedStyle(el);
+      const bg = estilo.backgroundColor;
+      
+      // Se não for transparente, encontramos a cor real de fundo!
+      if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
+        return bg;
+      }
+      el = el.parentElement;
+    }
+    // Fallback: se tudo for transparente, pega a cor do body ou assume branco/claro
+    const bgBody = window.getComputedStyle(document.body).backgroundColor;
+    return bgBody && bgBody !== "transparent" && bgBody !== "rgba(0, 0, 0, 0)" 
+      ? bgBody 
+      : "rgb(255, 255, 255)";
+  };
+
+  // Avalia a luminosidade percebida (0 = preto total, 255 = branco total)
   const isCorEscura = (rgbStr) => {
-    if (!rgbStr || rgbStr === "transparent" || rgbStr === "rgba(0, 0, 0, 0)") return false;
+    if (!rgbStr) return false;
     const match = rgbStr.match(/\d+/g);
     if (!match || match.length < 3) return false;
     const [r, g, b] = match.map(Number);
-    // Formula padrão de luminosidade percebida (perceived brightness)
     const luminosidade = (r * 299 + g * 587 + b * 114) / 1000;
-    return luminosidade < 128; // Retorna true se a cor for escura
+    return luminosidade < 128;
   };
-
+  
   // Aplica o destaque no bloco visual correspondente ao índice atual da leitura
   const aplicarDestaque = (index) => {
     limparDestaque();
@@ -99,15 +118,13 @@ export default function BotLeitura() {
     if (!noTexto || !noTexto.parentNode) return;
 
     try {
-      // Descobre a cor de fundo real do elemento onde o texto está inserido
       const elementoPai = noTexto.parentElement;
-      const estiloComp = window.getComputedStyle(elementoPai);
-      const corFundo = estiloComp.backgroundColor;
+      // Busca a cor real subindo pelos pais
+      const corFundoReal = obterCorFundoReal(elementoPai);
 
       const span = document.createElement("span");
-      
-      // Se o elemento pai tiver fundo escuro, usa .trecho-leitura-dark
-      if (isCorEscura(corFundo)) {
+
+      if (isCorEscura(corFundoReal)) {
         span.className = "trecho-leitura-dark";
       } else {
         span.className = "trecho-leitura-ativo";
