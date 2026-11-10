@@ -8,7 +8,7 @@ export default function BotLeitura() {
   const [suporte, setSuporte] = useState(true);
   const pathname = usePathname();
 
-  const rotasPermitidas = ["/golpes", "/regra-tripla", "/ajuda"];
+  const rotasPermitidas = ["/", "/golpes", "/regra-tripla", "/ajuda"];
   const deveExibir = rotasPermitidas.some((rota) => pathname?.startsWith(rota));
 
   const chunksRef = useRef([]);
