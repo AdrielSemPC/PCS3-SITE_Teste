@@ -8,7 +8,7 @@ export default function BotLeitura() {
   const [suporte, setSuporte] = useState(true);
   const pathname = usePathname();
 
-  const rotasPermitidas = ["/golpes", "/regra-tripla", "/ajuda"];
+  const rotasPermitidas = ["/", "/golpes", "/regra-tripla", "/ajuda"];
   const deveExibir = rotasPermitidas.some((rota) => pathname?.startsWith(rota));
 
   // Refs para controle seguro da fila de áudio sem depender de re-renders do React
