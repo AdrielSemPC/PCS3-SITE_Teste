@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
-/* --- MODO CLARO (Padrão) --- */
+/* Destaque para fundos claros (Marca-texto com multiply) */
 .trecho-leitura-ativo {
   background-color: #fef08a !important; /* Amarelo suave */
-  color: inherit !important;             /* Mantém a cor original do texto */
   mix-blend-mode: multiply !important;    /* Age como marca-texto em fundo claro */
   display: inline;
   padding: 0 !important;
@@ -12,12 +11,14 @@
   -webkit-box-decoration-break: clone;
 }
 
-/* --- MODO ESCURO (Dark Mode por classe ou preferencia do sistema) --- */
-.dark .trecho-leitura-ativo,
-@media (prefers-color-scheme: dark) {
-  .trecho-leitura-ativo {
-    background-color: #854d0e !important; /* Amarelo/Dourado escuro para dar contraste */
-    color: #fef08a !important;            /* Texto em amarelo claro para leitura nítida */
-    mix-blend-mode: normal !important;     /* Retorna ao modo normal para não sumir no fundo preto */
-  }
+/* Destaque para fundos escuros (Independente de estar no tema claro ou escuro) */
+.trecho-leitura-dark {
+  background-color: #854d0e !important; /* Dourado/Castanho */
+  color: #fef08a !important;            /* Texto amarelo claro para contraste */
+  mix-blend-mode: normal !important;     /* Não multiplica para não sumir */
+  display: inline;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
