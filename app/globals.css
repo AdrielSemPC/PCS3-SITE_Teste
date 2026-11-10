@@ -1,12 +1,11 @@
 @import "tailwindcss";
 
-/* Destaque visual que não altera a posição das palavras nem o layout */
 .trecho-leitura-ativo {
-  background-color: #fef08a !important; /* Amarelo de destaque */
-  color: #000000 !important;            /* Garante leitura nítida sobre o amarelo */
-  display: inline;                       /* Mantém o fluxo normal do texto */
-  padding: 0 !important;                 /* Zero padding para NÃO mover o texto */
-  margin: 0 !important;                  /* Zero margem para NÃO mover o texto */
-  box-decoration-break: clone;           /* Mantém o fundo uniforme se o texto quebrar linha */
+  background-color: #fef08a !important; /* Amarelo marca-texto */
+  mix-blend-mode: multiply !important;    /* Age como marca-texto real, preservando as letras */
+  display: inline;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
