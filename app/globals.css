@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
-/* Destaque para fundos claros (Marca-texto com multiply) */
+/* Destaque para fundos claros */
 .trecho-leitura-ativo {
-  background-color: #fef08a !important; /* Amarelo suave */
-  mix-blend-mode: multiply !important;    /* Age como marca-texto em fundo claro */
+  background-color: #fef08a !important; /* Amarelo */
+  color: #000000 !important;            /* Texto preto forçado */
   display: inline;
   padding: 0 !important;
   margin: 0 !important;
@@ -11,11 +11,10 @@
   -webkit-box-decoration-break: clone;
 }
 
-/* Destaque para fundos escuros (Independente de estar no tema claro ou escuro) */
+/* Destaque para fundos escuros */
 .trecho-leitura-dark {
-  background-color: #854d0e !important; /* Dourado/Castanho */
-  color: #fef08a !important;            /* Texto amarelo claro para contraste */
-  mix-blend-mode: multiply !important;
+  background-color: #facc15 !important; /* Amarelo vibrante */
+  color: #000000 !important;            /* Texto preto forçado */
   display: inline;
   padding: 0 !important;
   margin: 0 !important;
