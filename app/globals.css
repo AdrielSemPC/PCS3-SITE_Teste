@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
-/* Destaque visual durante a leitura em voz alta */
-::highlight(leitura-ativa) {
-  background-color: #fef08a; /* Amarelo */
-  color: #1e293b;            /* Texto escuro */
+/* Classe responsável pelo destaque amarelado do trecho que está sendo lido */
+.trecho-leitura-ativo {
+  background-color: #fef08a !important; /* Amarelo (yellow-200) */
+  color: #1e293b !important;            /* Texto escuro (slate-800) */
+  border-radius: 4px;
+  padding: 2px 4px;
+  transition: background-color 0.2s ease;
 }
