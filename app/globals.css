@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
-/* Classe responsável pelo destaque amarelado do trecho que está sendo lido */
+/* Destaca o fundo com contraste exato sem alterar a cor original do texto */
 .trecho-leitura-ativo {
-  background-color: #fef08a !important; /* Amarelo (yellow-200) */
-  color: #1e293b !important;            /* Texto escuro (slate-800) */
+  background-color: #ffffff !important; /* Cor base para inverter */
+  mix-blend-mode: difference !important; /* Inverte o fundo em relação ao texto */
   border-radius: 4px;
-  padding: 2px 4px;
   transition: background-color 0.2s ease;
 }
