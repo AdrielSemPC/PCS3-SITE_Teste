@@ -9,6 +9,9 @@ export default function BotLeitura() {
   const pathname = usePathname();
   const keepAliveTimerRef = useRef(null);
 
+  const rotasPermitidas = ["/golpes", "/regra-tripla", "/ajuda"];
+  const deveExibir = rotasPermitidas.some((rota) => pathname?.startsWith(rota));
+
   const stopKeepAlive = () => {
     if (keepAliveTimerRef.current) {
       clearInterval(keepAliveTimerRef.current);
@@ -238,7 +241,7 @@ export default function BotLeitura() {
     setIsPaused(false);
   };
 
-  if (!suporte) return null;
+  if (!suporte || !deveExibir) return null;
 
   return (
     <div
