@@ -1,11 +1,23 @@
 @import "tailwindcss";
 
+/* --- MODO CLARO (Padrão) --- */
 .trecho-leitura-ativo {
-  background-color: #fef08a !important; /* Amarelo marca-texto */
-  mix-blend-mode: multiply !important;    /* Age como marca-texto real, preservando as letras */
+  background-color: #fef08a !important; /* Amarelo suave */
+  color: inherit !important;             /* Mantém a cor original do texto */
+  mix-blend-mode: multiply !important;    /* Age como marca-texto em fundo claro */
   display: inline;
   padding: 0 !important;
   margin: 0 !important;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+/* --- MODO ESCURO (Dark Mode por classe ou preferencia do sistema) --- */
+.dark .trecho-leitura-ativo,
+@media (prefers-color-scheme: dark) {
+  .trecho-leitura-ativo {
+    background-color: #854d0e !important; /* Amarelo/Dourado escuro para dar contraste */
+    color: #fef08a !important;            /* Texto em amarelo claro para leitura nítida */
+    mix-blend-mode: normal !important;     /* Retorna ao modo normal para não sumir no fundo preto */
+  }
 }
