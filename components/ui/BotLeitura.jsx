@@ -8,9 +8,10 @@ export default function BotLeitura() {
   const [suporte, setSuporte] = useState(true);
   const pathname = usePathname();
 
-  const rotasPermitidas = ["/", "/golpes", "/regra-tripla", "/ajuda"];
+  const rotasPermitidas = ["/golpes", "/regra-tripla", "/ajuda"];
   const deveExibir = rotasPermitidas.some((rota) => pathname?.startsWith(rota));
 
+  // Refs para controle seguro da fila de áudio sem depender de re-renders do React
   const chunksRef = useRef([]);
   const currentIndexRef = useRef(0);
   const isSpeakingRef = useRef(false);
@@ -55,14 +56,18 @@ export default function BotLeitura() {
     };
   }, []);
 
+  // Para a leitura automaticamente se o usuário mudar de rota/página
   useEffect(() => {
     pararLeitura();
   }, [pathname]);
 
   const limparSimbolos = (str) => {
     return str
+      // Remove símbolos gráficos e decorativos que causam leitura estranha
       .replace(/[✓✔♥❤★☆←→↑↓▶⏸⏹►▪●•\u200B-\u200D\uFEFF]/g, "")
+      // Substitui barras verticais decorativas por vírgulas para som fluido
       .replace(/\|/g, ", ")
+      // Remove emojis gráficos em geral
       .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "");
   };
 
@@ -77,8 +82,11 @@ export default function BotLeitura() {
       linha = linha.trim().replace(/\s+/g, " ");
       if (!linha) continue;
 
+      // Ignora fragmentos que não contenham letras ou números
       if (!/[a-zA-Z0-9À-ÿ]/.test(linha)) continue;
 
+      // Garante uma pontuação ao final de cada bloco de texto para
+      // que o sintetizador faça uma pausa natural entre títulos e parágrafos
       const terminaComPontuacao = /[.!?:;,—–-]$/.test(linha);
       const linhaComPontuacao = terminaComPontuacao ? linha : `${linha}.`;
       sentencas.push(linhaComPontuacao);
@@ -87,6 +95,8 @@ export default function BotLeitura() {
     return sentencas.join(" ");
   };
 
+  // Divide o texto em blocos pequenos (máximo ~140 caracteres)
+  // Motores móveis (Android Chrome e iOS Safari) travam ou silenciam se o texto for longo
   const dividirTextoEmChunks = (textoFormatado, maxLen = 140) => {
     if (!textoFormatado) return [];
 
@@ -136,7 +146,7 @@ export default function BotLeitura() {
     return chunks.filter((c) => c && c.trim().length > 0);
   };
 
-  // --- FUNÇÃO ADAPTADA PARA LER SELEÇÃO DE TEXTO ---
+    // --- FUNÇÃO ADAPTADA PARA LER SELEÇÃO DE TEXTO ---
   const getTextoParaLer = () => {
     if (typeof window === "undefined") return "";
 
@@ -184,8 +194,19 @@ export default function BotLeitura() {
       el.remove();
     });
 
+    // Garante que elementos de bloco tenham quebra de linha para o textContent não grudar palavras
     const tagsDeBloco = [
-      "p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "article", "section", "div"
+      "p",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "li",
+      "article",
+      "section",
+      "div",
     ];
     clone.querySelectorAll(tagsDeBloco.join(", ")).forEach((el) => {
       el.append(" \n");
@@ -231,6 +252,7 @@ export default function BotLeitura() {
 
     utterance.onend = () => {
       if (isSpeakingRef.current && !isPausedRef.current) {
+        // Intervalo de segurança para motores móveis (iOS/Android) processarem o próximo bloco
         setTimeout(() => {
           tocarChunk(index + 1);
         }, 30);
@@ -249,6 +271,7 @@ export default function BotLeitura() {
       }
     };
 
+    // Previne que o Garbage Collector descarte o utterance antes de terminar
     utteranceRef.current = utterance;
     if (typeof window !== "undefined") {
       window.__speechUtterance = utterance;
@@ -260,7 +283,8 @@ export default function BotLeitura() {
   const iniciarLeitura = () => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-    if (isPaused) {
+    // Se estava pausado, retoma da exata frase onde parou
+    if (isPausedRef.current && chunksRef.current.length > 0) {
       isPausedRef.current = false;
       isSpeakingRef.current = true;
       setIsPaused(false);
@@ -269,6 +293,7 @@ export default function BotLeitura() {
       return;
     }
 
+    // Início do zero
     const textoFormatado = getTextoParaLer();
     if (!textoFormatado) return;
 
@@ -289,6 +314,7 @@ export default function BotLeitura() {
   };
 
   const pausarLeitura = () => {
+    // Pausa controlada: interrompe o áudio atual e memoriza a frase atual
     isPausedRef.current = true;
     isSpeakingRef.current = false;
     setIsPaused(true);
@@ -329,7 +355,7 @@ export default function BotLeitura() {
           <button
             onClick={iniciarLeitura}
             className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold flex-1 text-base sm:text-lg transition-colors cursor-pointer"
-            aria-label={isPaused ? "Continuar leitura" : "Ouvir o conteúdo da página ou texto selecionado"}
+            aria-label={isPaused ? "Continuar leitura" : "Ouvir o conteúdo importante da página"}
           >
             {isPaused ? "▶️ Continuar" : "▶️ Ouvir"}
           </button>
